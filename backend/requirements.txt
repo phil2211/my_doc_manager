@@ -2,3 +2,5 @@ fastapi
 uvicorn
 pymongo
 pytest
+pdfplumber
+pypdf
