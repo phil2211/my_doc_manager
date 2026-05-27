@@ -3,5 +3,6 @@ import pytest
 from src.pdf_processor import extract_text_from_page
 
 def test_extract_text_from_page(tmp_path):
-    text = extract_text_from_page("tests/fixtures/sample.pdf", page_num=0)
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "sample.pdf")
+    text = extract_text_from_page(fixture_path, page_num=0)
     assert isinstance(text, str)
