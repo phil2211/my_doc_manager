@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   getDocument,
   getDocumentFileUrl,
+  listSenderNames,
   getPagePreviewUrl,
   getPageThumbnailUrl,
   updateDocumentMetadata,
@@ -19,13 +20,23 @@ export default function DocumentDetail() {
   const [lightboxPage, setLightboxPage] = useState<PageResponse | null>(null);
   const [savingType, setSavingType] = useState(false);
   const [savingDate, setSavingDate] = useState(false);
+  const [savingSender, setSavingSender] = useState(false);
+  const [senderDraft, setSenderDraft] = useState("");
+  const [knownSenders, setKnownSenders] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) return;
     void getDocument(id)
       .then(setDocument)
       .catch((detailError) => setError(String(detailError)));
+    void listSenderNames()
+      .then(setKnownSenders)
+      .catch(() => setKnownSenders([]));
   }, [id]);
+
+  useEffect(() => {
+    setSenderDraft(document?.metadata.sender_name ?? "");
+  }, [document?.metadata.sender_name]);
 
   useEffect(() => {
     if (!lightboxPage) return;
@@ -77,6 +88,32 @@ export default function DocumentDetail() {
     }
   }
 
+  async function saveSender() {
+    if (!id || !document) return;
+
+    const trimmed = senderDraft.trim();
+    const current = (document.metadata.sender_name ?? "").trim();
+    if (trimmed === current) return;
+
+    setSavingSender(true);
+    setError(null);
+    try {
+      const updated = await updateDocumentMetadata(id, {
+        sender_name: trimmed || null,
+      });
+      setDocument(updated);
+      setSenderDraft(updated.metadata.sender_name ?? "");
+      if (trimmed && !knownSenders.includes(trimmed)) {
+        setKnownSenders((prev) => [...prev, trimmed].sort((a, b) => a.localeCompare(b)));
+      }
+    } catch (senderError) {
+      setError(String(senderError));
+      setSenderDraft(document.metadata.sender_name ?? "");
+    } finally {
+      setSavingSender(false);
+    }
+  }
+
   if (error) {
     return <p className="error">{error}</p>;
   }
@@ -84,6 +121,14 @@ export default function DocumentDetail() {
   if (!document) {
     return <p className="status">Loading document...</p>;
   }
+
+  const senderSuggestions = Array.from(
+    new Set([
+      ...knownSenders,
+      ...(document.metadata.sender_name ? [document.metadata.sender_name] : []),
+      ...(senderDraft.trim() ? [senderDraft.trim()] : []),
+    ]),
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
     <section className="grid">
@@ -133,9 +178,39 @@ export default function DocumentDetail() {
             </button>
             {savingDate && <span className="status">Saving…</span>}
           </div>
-          <p>
-            <strong>Sender:</strong> {document.metadata.sender_name || "-"}
-          </p>
+          <div className="field-row field-row-wide">
+            <label htmlFor="doc-sender">Sender</label>
+            <input
+              id="doc-sender"
+              type="text"
+              list="sender-suggestions"
+              value={senderDraft}
+              disabled={savingSender}
+              placeholder="Select or type sender name"
+              onChange={(event) => setSenderDraft(event.target.value)}
+              onBlur={() => void saveSender()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void saveSender();
+                }
+              }}
+            />
+            <datalist id="sender-suggestions">
+              {senderSuggestions.map((sender) => (
+                <option key={sender} value={sender} />
+              ))}
+            </datalist>
+            <button
+              type="button"
+              className="secondary"
+              disabled={savingSender || !senderDraft.trim()}
+              onClick={() => void saveSender()}
+            >
+              Save
+            </button>
+            {savingSender && <span className="status">Saving…</span>}
+          </div>
           <p>
             <strong>Grouping confidence:</strong>{" "}
             {document.grouping_confidence?.toFixed(2) ?? "-"}

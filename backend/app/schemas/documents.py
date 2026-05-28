@@ -79,9 +79,14 @@ class DocumentSearchResponse(BaseModel):
     total: int
 
 
+class SenderNamesResponse(BaseModel):
+    items: list[str] = Field(default_factory=list)
+
+
 class DocumentMetadataUpdateRequest(BaseModel):
     doc_type: DocType | None = None
     document_date: date | None = None
+    sender_name: str | None = Field(default=None, max_length=80)
 
 
 class SettingsResponse(BaseModel):

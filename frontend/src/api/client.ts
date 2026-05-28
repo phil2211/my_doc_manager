@@ -100,6 +100,11 @@ export function getDocument(documentId: string): Promise<LogicalDocumentResponse
 export interface DocumentMetadataUpdate {
   doc_type?: string;
   document_date?: string | null;
+  sender_name?: string | null;
+}
+
+export function listSenderNames(): Promise<string[]> {
+  return request<{ items: string[] }>("/api/v1/documents/senders").then((response) => response.items);
 }
 
 export function updateDocumentMetadata(

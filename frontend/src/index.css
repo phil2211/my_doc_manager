@@ -251,10 +251,17 @@ button.secondary {
 }
 
 .field-row select,
-.field-row input[type="date"] {
+.field-row input[type="date"],
+.field-row input[type="text"] {
   width: auto;
   min-width: 180px;
   color-scheme: dark;
+}
+
+.field-row-wide input[type="text"] {
+  flex: 1;
+  min-width: 220px;
+  max-width: 420px;
 }
 
 .error {

@@ -17,7 +17,9 @@ from app.schemas.documents import (
     DocumentSearchResponse,
     LogicalDocumentResponse,
     PageResponse,
+    SenderNamesResponse,
 )
+from app.services.classification.rules import normalize_sender
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -103,6 +105,14 @@ async def search_documents(
     return DocumentSearchResponse(items=response_items, total=total)
 
 
+@router.get("/senders", response_model=SenderNamesResponse)
+async def list_sender_names(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> SenderNamesResponse:
+    items = await logical_documents_repo.list_distinct_sender_names(db.logical_documents)
+    return SenderNamesResponse(items=items)
+
+
 @router.get("/{document_id}", response_model=LogicalDocumentResponse)
 async def get_document(
     document_id: str,
@@ -139,6 +149,19 @@ async def update_document_metadata(
                 time.min,
                 tzinfo=timezone.utc,
             )
+    if "sender_name" in changes:
+        raw_sender = changes["sender_name"]
+        if raw_sender is None:
+            update_fields["sender_name"] = None
+            update_fields["sender_normalized"] = None
+        else:
+            stripped = raw_sender.strip()
+            if not stripped:
+                update_fields["sender_name"] = None
+                update_fields["sender_normalized"] = None
+            else:
+                update_fields["sender_name"] = stripped
+                update_fields["sender_normalized"] = normalize_sender(stripped)
 
     if not update_fields:
         raise HTTPException(status_code=400, detail="No fields to update")
