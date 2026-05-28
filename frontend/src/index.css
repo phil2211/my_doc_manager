@@ -28,6 +28,24 @@ a:hover {
   padding: 24px;
 }
 
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 12px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.app-logo {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.35));
+}
+
 nav {
   display: flex;
   gap: 16px;
