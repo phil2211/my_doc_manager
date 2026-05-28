@@ -32,6 +32,22 @@ async def get_logical_document(
     return await collection.find_one({"_id": _oid(logical_document_id)})
 
 
+async def list_distinct_sender_names(
+    collection: AsyncIOMotorCollection,
+    *,
+    limit: int = 200,
+) -> list[str]:
+    pipeline = [
+        {"$match": {"sender_name": {"$exists": True, "$nin": [None, ""]}}},
+        {"$group": {"_id": "$sender_name"}},
+        {"$sort": {"_id": 1}},
+        {"$limit": limit},
+    ]
+    cursor = collection.aggregate(pipeline)
+    results = await cursor.to_list(length=limit)
+    return [str(item["_id"]) for item in results if item.get("_id")]
+
+
 async def search_logical_documents(
     collection: AsyncIOMotorCollection,
     *,

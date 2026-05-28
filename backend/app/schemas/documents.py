@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+DocType = Literal["bill", "contract", "information", "commercial", "other"]
 
 
 class SourceFileResponse(BaseModel):
@@ -75,6 +77,16 @@ class DocumentListItem(BaseModel):
 class DocumentSearchResponse(BaseModel):
     items: list[DocumentListItem]
     total: int
+
+
+class SenderNamesResponse(BaseModel):
+    items: list[str] = Field(default_factory=list)
+
+
+class DocumentMetadataUpdateRequest(BaseModel):
+    doc_type: DocType | None = None
+    document_date: date | None = None
+    sender_name: str | None = Field(default=None, max_length=80)
 
 
 class SettingsResponse(BaseModel):

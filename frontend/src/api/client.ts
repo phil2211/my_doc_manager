@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+/** Empty string uses same origin; Vite proxies /api to the backend in dev. */
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export interface UploadResponse {
   source_file_id: string;
@@ -96,6 +97,27 @@ export function getDocument(documentId: string): Promise<LogicalDocumentResponse
   return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`);
 }
 
+export interface DocumentMetadataUpdate {
+  doc_type?: string;
+  document_date?: string | null;
+  sender_name?: string | null;
+}
+
+export function listSenderNames(): Promise<string[]> {
+  return request<{ items: string[] }>("/api/v1/documents/senders").then((response) => response.items);
+}
+
+export function updateDocumentMetadata(
+  documentId: string,
+  payload: DocumentMetadataUpdate,
+): Promise<LogicalDocumentResponse> {
+  return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getDocumentFileUrl(documentId: string): string {
   return `${API_URL}/api/v1/documents/${documentId}/file`;
 }
@@ -114,4 +136,8 @@ export function updateSettings(payload: Partial<SettingsResponse>): Promise<Sett
 
 export function getPageThumbnailUrl(pageId: string): string {
   return `${API_URL}/api/v1/pages/${pageId}/thumbnail`;
+}
+
+export function getPagePreviewUrl(pageId: string): string {
+  return `${API_URL}/api/v1/pages/${pageId}/preview`;
 }

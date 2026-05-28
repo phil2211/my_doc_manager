@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import AppLogo from "./components/AppLogo";
 import DocumentDetail from "./pages/DocumentDetail";
 import Search from "./pages/Search";
 import Settings from "./pages/Settings";
@@ -8,7 +9,10 @@ export default function App() {
   return (
     <div className="app-shell">
       <header>
-        <h1>PDF Scan Metadata Manager</h1>
+        <h1 className="app-title">
+          <AppLogo />
+          <span>PDF Scan Metadata Manager</span>
+        </h1>
         <nav>
           <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
             Upload
