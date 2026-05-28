@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+/** Empty string uses same origin; Vite proxies /api to the backend in dev. */
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export interface UploadResponse {
   source_file_id: string;
