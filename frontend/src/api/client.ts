@@ -97,14 +97,19 @@ export function getDocument(documentId: string): Promise<LogicalDocumentResponse
   return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`);
 }
 
-export function updateDocumentDocType(
+export interface DocumentMetadataUpdate {
+  doc_type?: string;
+  document_date?: string | null;
+}
+
+export function updateDocumentMetadata(
   documentId: string,
-  docType: string,
+  payload: DocumentMetadataUpdate,
 ): Promise<LogicalDocumentResponse> {
   return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ doc_type: docType }),
+    body: JSON.stringify(payload),
   });
 }
 

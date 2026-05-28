@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
-
-from typing import Literal
+from datetime import date, datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -82,7 +80,8 @@ class DocumentSearchResponse(BaseModel):
 
 
 class DocumentMetadataUpdateRequest(BaseModel):
-    doc_type: DocType
+    doc_type: DocType | None = None
+    document_date: date | None = None
 
 
 class SettingsResponse(BaseModel):

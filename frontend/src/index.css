@@ -250,9 +250,11 @@ button.secondary {
   color: #e2e8f0;
 }
 
-.field-row select {
+.field-row select,
+.field-row input[type="date"] {
   width: auto;
   min-width: 180px;
+  color-scheme: dark;
 }
 
 .error {

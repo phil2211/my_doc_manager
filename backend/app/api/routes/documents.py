@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -125,10 +125,28 @@ async def update_document_metadata(
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    changes = payload.model_dump(exclude_unset=True)
+    update_fields: dict[str, object] = {}
+    if "doc_type" in changes:
+        update_fields["doc_type"] = changes["doc_type"]
+    if "document_date" in changes:
+        raw_date = changes["document_date"]
+        if raw_date is None:
+            update_fields["document_date"] = None
+        else:
+            update_fields["document_date"] = datetime.combine(
+                raw_date,
+                time.min,
+                tzinfo=timezone.utc,
+            )
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
     await logical_documents_repo.update_logical_document(
         db.logical_documents,
         document_id,
-        {"doc_type": payload.doc_type},
+        update_fields,
     )
 
     updated = await logical_documents_repo.get_logical_document(db.logical_documents, document_id)

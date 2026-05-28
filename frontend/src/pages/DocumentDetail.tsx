@@ -5,11 +5,12 @@ import {
   getDocumentFileUrl,
   getPagePreviewUrl,
   getPageThumbnailUrl,
-  updateDocumentDocType,
+  updateDocumentMetadata,
   type LogicalDocumentResponse,
   type PageResponse,
 } from "../api/client";
 import { DOC_TYPES, formatDocType } from "../constants/docTypes";
+import { dateInputToApiValue, toDateInputValue } from "../utils/dates";
 
 export default function DocumentDetail() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ export default function DocumentDetail() {
   const [error, setError] = useState<string | null>(null);
   const [lightboxPage, setLightboxPage] = useState<PageResponse | null>(null);
   const [savingType, setSavingType] = useState(false);
+  const [savingDate, setSavingDate] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -46,12 +48,32 @@ export default function DocumentDetail() {
     setSavingType(true);
     setError(null);
     try {
-      const updated = await updateDocumentDocType(id, nextType);
+      const updated = await updateDocumentMetadata(id, { doc_type: nextType });
       setDocument(updated);
     } catch (typeError) {
       setError(String(typeError));
     } finally {
       setSavingType(false);
+    }
+  }
+
+  async function handleDateChange(nextValue: string) {
+    if (!id || !document) return;
+
+    const currentValue = toDateInputValue(document.metadata.document_date);
+    if (nextValue === currentValue) return;
+
+    setSavingDate(true);
+    setError(null);
+    try {
+      const updated = await updateDocumentMetadata(id, {
+        document_date: dateInputToApiValue(nextValue),
+      });
+      setDocument(updated);
+    } catch (dateError) {
+      setError(String(dateError));
+    } finally {
+      setSavingDate(false);
     }
   }
 
@@ -92,12 +114,25 @@ export default function DocumentDetail() {
             </select>
             {savingType && <span className="status">Saving…</span>}
           </div>
-          <p>
-            <strong>Date:</strong>{" "}
-            {document.metadata.document_date
-              ? new Date(document.metadata.document_date).toLocaleDateString()
-              : "-"}
-          </p>
+          <div className="field-row">
+            <label htmlFor="doc-date">Date</label>
+            <input
+              id="doc-date"
+              type="date"
+              value={toDateInputValue(document.metadata.document_date)}
+              disabled={savingDate}
+              onChange={(event) => void handleDateChange(event.target.value)}
+            />
+            <button
+              type="button"
+              className="secondary"
+              disabled={savingDate || !document.metadata.document_date}
+              onClick={() => void handleDateChange("")}
+            >
+              Clear
+            </button>
+            {savingDate && <span className="status">Saving…</span>}
+          </div>
           <p>
             <strong>Sender:</strong> {document.metadata.sender_name || "-"}
           </p>
