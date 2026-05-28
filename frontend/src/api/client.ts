@@ -97,6 +97,17 @@ export function getDocument(documentId: string): Promise<LogicalDocumentResponse
   return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`);
 }
 
+export function updateDocumentDocType(
+  documentId: string,
+  docType: string,
+): Promise<LogicalDocumentResponse> {
+  return request<LogicalDocumentResponse>(`/api/v1/documents/${documentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ doc_type: docType }),
+  });
+}
+
 export function getDocumentFileUrl(documentId: string): string {
   return `${API_URL}/api/v1/documents/${documentId}/file`;
 }

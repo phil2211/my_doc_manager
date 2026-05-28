@@ -5,15 +5,18 @@ import {
   getDocumentFileUrl,
   getPagePreviewUrl,
   getPageThumbnailUrl,
+  updateDocumentDocType,
   type LogicalDocumentResponse,
   type PageResponse,
 } from "../api/client";
+import { DOC_TYPES, formatDocType } from "../constants/docTypes";
 
 export default function DocumentDetail() {
   const { id } = useParams();
   const [document, setDocument] = useState<LogicalDocumentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lightboxPage, setLightboxPage] = useState<PageResponse | null>(null);
+  const [savingType, setSavingType] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -34,6 +37,23 @@ export default function DocumentDetail() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [lightboxPage]);
+
+  async function handleDocTypeChange(nextType: string) {
+    if (!id || !document || nextType === (document.metadata.doc_type ?? "")) {
+      return;
+    }
+
+    setSavingType(true);
+    setError(null);
+    try {
+      const updated = await updateDocumentDocType(id, nextType);
+      setDocument(updated);
+    } catch (typeError) {
+      setError(String(typeError));
+    } finally {
+      setSavingType(false);
+    }
+  }
 
   if (error) {
     return <p className="error">{error}</p>;
@@ -56,9 +76,22 @@ export default function DocumentDetail() {
           </a>
         </p>
         <div className="grid">
-          <p>
-            <strong>Type:</strong> {document.metadata.doc_type || "-"}
-          </p>
+          <div className="field-row">
+            <label htmlFor="doc-type">Type</label>
+            <select
+              id="doc-type"
+              value={document.metadata.doc_type ?? "other"}
+              disabled={savingType}
+              onChange={(event) => void handleDocTypeChange(event.target.value)}
+            >
+              {DOC_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {formatDocType(type)}
+                </option>
+              ))}
+            </select>
+            {savingType && <span className="status">Saving…</span>}
+          </div>
           <p>
             <strong>Date:</strong>{" "}
             {document.metadata.document_date

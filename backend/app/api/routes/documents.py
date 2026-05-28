@@ -13,6 +13,7 @@ from app.db.repositories import source_files as source_files_repo
 from app.schemas.documents import (
     DocumentListItem,
     DocumentMetadataResponse,
+    DocumentMetadataUpdateRequest,
     DocumentSearchResponse,
     LogicalDocumentResponse,
     PageResponse,
@@ -23,6 +24,44 @@ router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
 async def get_db() -> AsyncIOMotorDatabase:
     return get_database()
+
+
+async def _logical_document_response(
+    document: dict,
+    db: AsyncIOMotorDatabase,
+) -> LogicalDocumentResponse:
+    document_id = str(document["_id"])
+    pages = await pages_repo.get_pages_by_logical_document(db.pages, document_id)
+    page_responses = [
+        PageResponse(
+            id=str(page["_id"]),
+            page_number=page["page_number"],
+            thumbnail_path=page.get("thumbnail_path"),
+            is_scanned=page.get("is_scanned", False),
+            text_content=page.get("text_content", ""),
+            ocr_confidence=page.get("ocr_confidence"),
+        )
+        for page in pages
+    ]
+
+    metadata = DocumentMetadataResponse(
+        doc_type=document.get("doc_type"),
+        document_date=document.get("document_date"),
+        sender_name=document.get("sender_name"),
+        sender_normalized=document.get("sender_normalized"),
+        confidence=document.get("confidence", {}),
+        extra_fields=document.get("extra_fields", {}),
+    )
+
+    return LogicalDocumentResponse(
+        id=document_id,
+        source_file_id=str(document["source_file_id"]),
+        page_ids=[str(page_id) for page_id in document.get("page_ids", [])],
+        title=document.get("title"),
+        grouping_confidence=document.get("grouping_confidence"),
+        metadata=metadata,
+        pages=page_responses,
+    )
 
 
 @router.get("", response_model=DocumentSearchResponse)
@@ -73,37 +112,28 @@ async def get_document(
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    pages = await pages_repo.get_pages_by_logical_document(db.pages, document_id)
-    page_responses = [
-        PageResponse(
-            id=str(page["_id"]),
-            page_number=page["page_number"],
-            thumbnail_path=page.get("thumbnail_path"),
-            is_scanned=page.get("is_scanned", False),
-            text_content=page.get("text_content", ""),
-            ocr_confidence=page.get("ocr_confidence"),
-        )
-        for page in pages
-    ]
+    return await _logical_document_response(document, db)
 
-    metadata = DocumentMetadataResponse(
-        doc_type=document.get("doc_type"),
-        document_date=document.get("document_date"),
-        sender_name=document.get("sender_name"),
-        sender_normalized=document.get("sender_normalized"),
-        confidence=document.get("confidence", {}),
-        extra_fields=document.get("extra_fields", {}),
+
+@router.patch("/{document_id}", response_model=LogicalDocumentResponse)
+async def update_document_metadata(
+    document_id: str,
+    payload: DocumentMetadataUpdateRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> LogicalDocumentResponse:
+    document = await logical_documents_repo.get_logical_document(db.logical_documents, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    await logical_documents_repo.update_logical_document(
+        db.logical_documents,
+        document_id,
+        {"doc_type": payload.doc_type},
     )
 
-    return LogicalDocumentResponse(
-        id=str(document["_id"]),
-        source_file_id=str(document["source_file_id"]),
-        page_ids=[str(page_id) for page_id in document.get("page_ids", [])],
-        title=document.get("title"),
-        grouping_confidence=document.get("grouping_confidence"),
-        metadata=metadata,
-        pages=page_responses,
-    )
+    updated = await logical_documents_repo.get_logical_document(db.logical_documents, document_id)
+    assert updated is not None
+    return await _logical_document_response(updated, db)
 
 
 @router.get("/{document_id}/file")

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { searchDocuments, type DocumentListItem } from "../api/client";
+import { DOC_TYPES, formatDocType } from "../constants/docTypes";
 
-const DOC_TYPES = ["", "bill", "contract", "information", "commercial", "other"];
+const SEARCH_DOC_TYPES = ["", ...DOC_TYPES] as const;
 
 export default function Search() {
   const [docType, setDocType] = useState("");
@@ -46,9 +47,9 @@ export default function Search() {
         <div>
           <label htmlFor="docType">Type</label>
           <select id="docType" value={docType} onChange={(event) => setDocType(event.target.value)}>
-            {DOC_TYPES.map((type) => (
+            {SEARCH_DOC_TYPES.map((type) => (
               <option key={type || "all"} value={type}>
-                {type || "All types"}
+                {type ? formatDocType(type) : "All types"}
               </option>
             ))}
           </select>

@@ -3,7 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+DocType = Literal["bill", "contract", "information", "commercial", "other"]
 
 
 class SourceFileResponse(BaseModel):
@@ -75,6 +79,10 @@ class DocumentListItem(BaseModel):
 class DocumentSearchResponse(BaseModel):
     items: list[DocumentListItem]
     total: int
+
+
+class DocumentMetadataUpdateRequest(BaseModel):
+    doc_type: DocType
 
 
 class SettingsResponse(BaseModel):
