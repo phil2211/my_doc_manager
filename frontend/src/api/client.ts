@@ -116,3 +116,7 @@ export function updateSettings(payload: Partial<SettingsResponse>): Promise<Sett
 export function getPageThumbnailUrl(pageId: string): string {
   return `${API_URL}/api/v1/pages/${pageId}/thumbnail`;
 }
+
+export function getPagePreviewUrl(pageId: string): string {
+  return `${API_URL}/api/v1/pages/${pageId}/preview`;
+}
