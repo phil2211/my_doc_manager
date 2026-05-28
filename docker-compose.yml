@@ -1,0 +1,40 @@
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: changeme
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - file_data:/app/data/files
+    environment:
+      MONGODB_URI: mongodb://admin:changeme@mongodb:27017/my_doc_manager?authSource=admin
+      FILE_STORAGE_PATH: /app/data/files
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  file_data:
